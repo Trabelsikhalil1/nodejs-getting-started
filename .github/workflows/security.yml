@@ -112,18 +112,21 @@ jobs:
               echo 'sslyze binary not found in PATH'; exit 1
             fi
             export SSLYZE_PATH="$SSLYZE_BIN" sslyze_path="$SSLYZE_BIN"
-            # Create and load a monkey-patch for File.exists? → File.exist?
+
+            # Monkey-patch Ruby so File.exists? → File.exist?
             cat << 'EOF' > monkey_patch.rb
-            class File
-              class << self
-                alias exists? exist?
-              end
-            end
-            EOF
+class File
+  class << self
+    alias exists? exist?
+  end
+end
+EOF
             export RUBYOPT="-r$(pwd)/monkey_patch.rb"
+
             sudo gem install gauntlt
             gauntlt gauntlt/attacks/*.attack || {
-              echo 'Gauntlt attacks detected issues.'; exit 1; }
+              echo 'Gauntlt attacks detected issues.'; exit 1
+            }
           else
             echo 'No gauntlt/attacks directory found; skipping Gauntlt tests.'
           fi
