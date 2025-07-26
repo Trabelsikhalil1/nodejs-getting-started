@@ -6,9 +6,9 @@ name: Security-CI
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   security-checks:
@@ -94,20 +94,24 @@ jobs:
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v2
 
-      # Optionally run Gauntlt to execute behavioural‑driven security tests.
-      # Gauntlt attacks are defined in attack files located in the
-      # gauntlt/attacks directory of your repository.  This step uses
-      # the official Gauntlt Docker image to execute those attacks.  If
-      # any attack fails the container will return a non‑zero exit code.
+      # Optionally run Gauntlt to execute behaviour‑driven security tests.
+      # Gauntlt attack files live under gauntlt/attacks.  We install Gauntlt
+      # and its dependencies (including sslyze) via the system package
+      # manager and RubyGems.  If any attack fails, the step exits with
+      # a non‑zero status.
       - name: Run Gauntlt security attacks
         if: ${{ always() }}
         run: |
           if [ -d gauntlt/attacks ]; then
             sudo apt-get update
             sudo apt-get install -y ruby ruby-dev build-essential
+            # Install Python dependencies for sslyze
             pip install sslyze
+            # Install the gauntlt gem
             sudo gem install gauntlt
-            gauntlt --attack-path gauntlt/attacks || {
+            # Execute all attack files (.attack) in the gauntlt/attacks directory.
+            # The gauntlt CLI accepts a list of feature files; globbing expands them.
+            gauntlt gauntlt/attacks/*.attack || {
               echo 'Gauntlt attacks detected issues.';
               exit 1;
             }
