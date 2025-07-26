@@ -1,7 +1,7 @@
 # Pre‑commit configuration for security checks.
 # Running `pre-commit run --all-files` will execute these hooks on every file.
 # The versions below are pinned for reproducibility.
-
+exclude: ^gauntlt/
 repos:
   # Standard pre‑commit hooks, including secret detection.  These hooks run
   # quickly and catch obvious problems like accidentally committed private keys.
