@@ -1,8 +1,8 @@
 Feature: Run sslyze against a target
 
   # This attack runs the sslyze adapter to check that a target
-  # server does not accept anonymous cipher suites.  It follows
-  # the official Gauntlt example for sslyze and relies on the
+  # server does not accept anonymous cipher suites.  It follows the
+  # official Gauntlt example for sslyze and relies on the
   # environment variable `sslyze_path` being set to the location
   # of the sslyze command.  The target host can be changed by
   # updating the `hostname` value below.
