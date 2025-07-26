@@ -6,7 +6,7 @@ repos:
   # Standard pre‑commit hooks, including secret detection.  These hooks run
   # quickly and catch obvious problems like accidentally committed private keys.
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v5.0.0
     hooks:
       - id: detect-private-key
       - id: check-yaml
@@ -16,7 +16,7 @@ repos:
   # associated with secrets (API keys, passwords, certificates).  It writes
   # a baseline file that can be updated by running `detect-secrets scan`.
   - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.4.0
+    rev: v1.5.0
     hooks:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
@@ -24,7 +24,7 @@ repos:
   # Bandit performs static analysis on Python code and reports common security
   # issues.  If your project is not Python, this hook will simply skip.
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.4
+    rev: 1.8.6
     hooks:
       - id: bandit
         args: ['-r', '.']
