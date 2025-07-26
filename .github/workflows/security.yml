@@ -6,9 +6,9 @@ name: Security-CI
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   security-checks:
@@ -34,10 +34,10 @@ jobs:
       # enforce client‑side security policies (e.g. secret detection, linting)
       # within the CI environment.  If any hook fails the job will exit
       # non‑zero and the pipeline will be marked as failed.
-      # - name: Run pre‑commit hooks
-      #   run: |
-      #     pip install pre-commit
-      #     pre-commit run --all-files --show-diff-on-failure
+      - name: Run pre‑commit hooks
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files --show-diff-on-failure
 
       # Run npm audit to detect known vulnerabilities in NPM dependencies.
       # The --audit-level flag is set to high to break the build on high
@@ -108,8 +108,21 @@ jobs:
             # Install sslyze and set the sslyze_path environment variable so that
             # Gauntlt can find it.  The sslyze adapter expects python to run
             # the sslyze script specified by <sslyze_path>.
-            pip install sslyze
-            export sslyze_path="$(which sslyze)"
+                # Use --user install because the default environment may not be writable.
+                pip install --user sslyze
+                # Ensure ~/.local/bin is in PATH so 'which sslyze' can find the executable
+                export PATH="$HOME/.local/bin:$PATH"
+                # Locate the sslyze executable.
+                SSLYZE_BIN="$(which sslyze || true)"
+                if [ -z "$SSLYZE_BIN" ]; then
+                  echo 'sslyze binary not found in PATH'
+                  exit 1
+                fi
+                # Set both SSLYZE_PATH (expected by some gauntlt adapters) and
+                # sslyze_path (referenced in attack files).  The adapter will
+                # invoke this script with python, so ensure the file resolves.
+                export SSLYZE_PATH="$SSLYZE_BIN"
+                export sslyze_path="$SSLYZE_PATH"
             # Install the gauntlt gem
             sudo gem install gauntlt
             # Execute all attack files in the gauntlt/attacks directory.  Each
