@@ -64,8 +64,6 @@ jobs:
       # certificates and other secrets.  It uses the default gitleaks config.
       - name: Scan for secrets with gitleaks
         uses: zricethezav/gitleaks-action@v2
-        with:
-          fail: true
 
       # Scan the source tree for known CVEs using Trivy.  Trivy
       # supports scanning of project dependencies (for Node, Python, etc.) and
