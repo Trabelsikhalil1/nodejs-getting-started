@@ -15,11 +15,11 @@ repos:
   # Detect-secrets scans files for high entropy strings and other patterns
   # associated with secrets (API keys, passwords, certificates).  It writes
   # a baseline file that can be updated by running `detect-secrets scan`.
-  # - repo: https://github.com/Yelp/detect-secrets
-  #   rev: v1.5.0
-  #   hooks:
-  #     - id: detect-secrets
-  #       args: ['--baseline', '.secrets.baseline']
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
 
   # Bandit performs static analysis on Python code and reports common security
   # issues.  If your project is not Python, this hook will simply skip.
