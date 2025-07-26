@@ -105,24 +105,26 @@ jobs:
           if [ -d gauntlt/attacks ]; then
             sudo apt-get update
             sudo apt-get install -y ruby ruby-dev build-essential
-            pip install --user sslyze
+
+            # Install sslyze into the user’s local bin
+            python3 -m pip install --user sslyze
             export PATH="$HOME/.local/bin:$PATH"
-            SSLYZE_BIN="$(which sslyze || true)"
+            SSLYZE_BIN="$(which sslyze)"
             if [ -z "$SSLYZE_BIN" ]; then
               echo 'sslyze binary not found in PATH'; exit 1
             fi
             export SSLYZE_PATH="$SSLYZE_BIN" sslyze_path="$SSLYZE_BIN"
 
-            # Monkey-patch Ruby so File.exists? → File.exist?
-            cat << 'EOF' > monkey_patch.rb
-class File
-  class << self
-    alias exists? exist?
-  end
-end
-EOF
+            # Generate monkey_patch.rb to alias File.exists? → File.exist?
+            echo "class File" > monkey_patch.rb
+            echo "  class << self" >> monkey_patch.rb
+            echo "    alias exists? exist?" >> monkey_patch.rb
+            echo "  end" >> monkey_patch.rb
+            echo "end" >> monkey_patch.rb
+
             export RUBYOPT="-r$(pwd)/monkey_patch.rb"
 
+            # Install and run Gauntlt
             sudo gem install gauntlt
             gauntlt gauntlt/attacks/*.attack || {
               echo 'Gauntlt attacks detected issues.'; exit 1
