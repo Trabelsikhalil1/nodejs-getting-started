@@ -6,9 +6,9 @@ name: Security-CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   security-checks:
@@ -105,33 +105,25 @@ jobs:
           if [ -d gauntlt/attacks ]; then
             sudo apt-get update
             sudo apt-get install -y ruby ruby-dev build-essential
-            # Install sslyze and set the sslyze_path environment variable so that
-            # Gauntlt can find it.  The sslyze adapter expects python to run
-            # the sslyze script specified by <sslyze_path>.
-                # Use --user install because the default environment may not be writable.
-                pip install --user sslyze
-                # Ensure ~/.local/bin is in PATH so 'which sslyze' can find the executable
-                export PATH="$HOME/.local/bin:$PATH"
-                # Locate the sslyze executable.
-                SSLYZE_BIN="$(which sslyze || true)"
-                if [ -z "$SSLYZE_BIN" ]; then
-                  echo 'sslyze binary not found in PATH'
-                  exit 1
-                fi
-                # Set both SSLYZE_PATH (expected by some gauntlt adapters) and
-                # sslyze_path (referenced in attack files).  The adapter will
-                # invoke this script with python, so ensure the file resolves.
-                export SSLYZE_PATH="$SSLYZE_BIN"
-                export sslyze_path="$SSLYZE_PATH"
-            # Install the gauntlt gem
+            pip install --user sslyze
+            export PATH="$HOME/.local/bin:$PATH"
+            SSLYZE_BIN="$(which sslyze || true)"
+            if [ -z "$SSLYZE_BIN" ]; then
+              echo 'sslyze binary not found in PATH'; exit 1
+            fi
+            export SSLYZE_PATH="$SSLYZE_BIN" sslyze_path="$SSLYZE_BIN"
+            # Create and load a monkey-patch for File.exists? → File.exist?
+            cat << 'EOF' > monkey_patch.rb
+            class File
+              class << self
+                alias exists? exist?
+              end
+            end
+            EOF
+            export RUBYOPT="-r$(pwd)/monkey_patch.rb"
             sudo gem install gauntlt
-            # Execute all attack files in the gauntlt/attacks directory.  Each
-            # attack file should define its own scenarios.  If any scenario
-            # fails, gauntlt will return a non‑zero exit code.
             gauntlt gauntlt/attacks/*.attack || {
-              echo 'Gauntlt attacks detected issues.';
-              exit 1;
-            }
+              echo 'Gauntlt attacks detected issues.'; exit 1; }
           else
             echo 'No gauntlt/attacks directory found; skipping Gauntlt tests.'
           fi
