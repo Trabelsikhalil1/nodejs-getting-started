@@ -87,12 +87,12 @@ jobs:
       # cross‑site scripting (XSS) and insecure deserialization.  The
       # languages section should list the languages used in your repository.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: 'javascript'
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
 
       # Optionally run Gauntlt to execute behaviour‑driven security tests.
       # Gauntlt attack files live under gauntlt/attacks.  We install Gauntlt
