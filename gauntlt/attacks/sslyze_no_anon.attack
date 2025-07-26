@@ -1,0 +1,24 @@
+Feature: Run sslyze against a target
+
+  # This attack runs the sslyze adapter to check that a target
+  # server does not accept anonymous cipher suites.  It follows
+  # the official Gauntlt example for sslyze and relies on the
+  # environment variable `sslyze_path` being set to the location
+  # of the sslyze command.  The target host can be changed by
+  # updating the `hostname` value below.
+
+  Background:
+    Given "sslyze" is installed
+    And the following profile:
+      | name     | value      |
+      | hostname | github.com |
+
+  Scenario: Ensure no anonymous cipher suites are accepted
+    When I launch an "sslyze" attack with:
+      """
+      python <sslyze_path> <hostname>:443
+      """
+    Then the output should not contain:
+      """
+      Anon
+      """

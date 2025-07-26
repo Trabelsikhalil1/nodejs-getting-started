@@ -105,12 +105,16 @@ jobs:
           if [ -d gauntlt/attacks ]; then
             sudo apt-get update
             sudo apt-get install -y ruby ruby-dev build-essential
-            # Install Python dependencies for sslyze
+            # Install sslyze and set the sslyze_path environment variable so that
+            # Gauntlt can find it.  The sslyze adapter expects python to run
+            # the sslyze script specified by <sslyze_path>.
             pip install sslyze
+            export sslyze_path="$(which sslyze)"
             # Install the gauntlt gem
             sudo gem install gauntlt
-            # Execute all attack files (.attack) in the gauntlt/attacks directory.
-            # The gauntlt CLI accepts a list of feature files; globbing expands them.
+            # Execute all attack files in the gauntlt/attacks directory.  Each
+            # attack file should define its own scenarios.  If any scenario
+            # fails, gauntlt will return a non‑zero exit code.
             gauntlt gauntlt/attacks/*.attack || {
               echo 'Gauntlt attacks detected issues.';
               exit 1;

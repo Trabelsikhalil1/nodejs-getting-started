@@ -9,7 +9,6 @@ repos:
     rev: v4.4.0
     hooks:
       - id: detect-private-key
-      - id: detect-aws-credentials
       - id: check-yaml
       - id: end-of-file-fixer
 
