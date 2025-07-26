@@ -1,0 +1,111 @@
+name: Security-CI
+
+# This workflow implements several security checks for a typical JavaScript/Node repository.
+# It runs on every push and pull request against the default branch.  The free
+# tier of GitHub Actions is sufficient to run these jobs.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Setup a recent Node.js runtime for dependency scanning and Retire.js.
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Install project dependencies.  Using npm ci ensures a clean install
+      # based on the lock file (package‑lock.json or npm-shrinkwrap.json).
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      # Install and run pre‑commit hooks on all files.  Pre‑commit will
+      # enforce client‑side security policies (e.g. secret detection, linting)
+      # within the CI environment.  If any hook fails the job will exit
+      # non‑zero and the pipeline will be marked as failed.
+      - name: Run pre‑commit hooks
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files --show-diff-on-failure
+
+      # Run npm audit to detect known vulnerabilities in NPM dependencies.
+      # The --audit-level flag is set to high to break the build on high
+      # severity vulnerabilities.  You may adjust this threshold to
+      # your organisation's risk tolerance.
+      - name: Audit dependencies with npm audit
+        run: |
+          npm audit --audit-level=high --production
+
+      # Install Retire.js globally and scan for vulnerable JavaScript
+      # libraries and Node modules.  The '--exitwith 1' flag causes
+      # the command to return a non‑zero exit code if any vulnerability is
+      # found.  The '--outputformat json' flag makes the output machine
+      # readable and easier to consume in a security dashboard.
+      - name: Scan JavaScript libraries with Retire.js
+        run: |
+          npm install -g retire
+          retire --outputformat json --exitwith 1 || (
+            echo 'Retire.js detected vulnerable dependencies.  Please review the report above.' && exit 1
+          )
+
+      # Perform secret scanning using gitleaks.  This action checks the
+      # repository history for accidental commits of API keys, passwords,
+      # certificates and other secrets.  It uses the default gitleaks config.
+      - name: Scan for secrets with gitleaks
+        uses: zricethezav/gitleaks-action@v2
+        with:
+          fail: true
+
+      # Scan the source tree for known CVEs using Trivy.  Trivy
+      # supports scanning of project dependencies (for Node, Python, etc.) and
+      # also scans infrastructure‑as‑code files for misconfigurations.  The
+      # --scanners flag is set to vuln,config to perform both tasks and
+      # fail the build on high severity issues.
+      - name: Scan dependencies and configuration with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: '.'
+          scanners: 'vuln,config'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'HIGH,CRITICAL'
+
+      # Run GitHub's CodeQL analysis for static code analysis.  CodeQL
+      # analyzes your code for security flaws such as SQL injection,
+      # cross‑site scripting (XSS) and insecure deserialization.  The
+      # languages section should list the languages used in your repository.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: 'javascript'
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v2
+
+      # Optionally run Gauntlt to execute behavioural‑driven security tests.
+      # Gauntlt attacks are defined in attack files located in the
+      # gauntlt/attacks directory of your repository.  This step uses
+      # the official Gauntlt Docker image to execute those attacks.  If
+      # any attack fails the container will return a non‑zero exit code.
+      - name: Run Gauntlt security attacks
+        if: ${{ always() }}
+        run: |
+          if [ -d gauntlt/attacks ]; then
+            docker run --rm -v "$PWD/gauntlt/attacks:/gauntlt/attacks" garyt225/gauntltkainos:latest gauntlt --attack-path /gauntlt/attacks || (
+              echo 'Gauntlt attacks detected issues.  Please review the output above.' && exit 1
+            )
+          else
+            echo 'No gauntlt/attacks directory found; skipping Gauntlt tests.'
+          fi
