@@ -6,9 +6,9 @@ name: Security-CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   security-checks:
@@ -103,9 +103,14 @@ jobs:
         if: ${{ always() }}
         run: |
           if [ -d gauntlt/attacks ]; then
-            docker run --rm -v "$PWD/gauntlt/attacks:/gauntlt/attacks" garyt225/gauntltkainos:latest gauntlt --attack-path /gauntlt/attacks || (
-              echo 'Gauntlt attacks detected issues.  Please review the output above.' && exit 1
-            )
+            sudo apt-get update
+            sudo apt-get install -y ruby ruby-dev build-essential
+            pip install sslyze
+            sudo gem install gauntlt
+            gauntlt --attack-path gauntlt/attacks || {
+              echo 'Gauntlt attacks detected issues.';
+              exit 1;
+            }
           else
             echo 'No gauntlt/attacks directory found; skipping Gauntlt tests.'
           fi
